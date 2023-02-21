@@ -51,7 +51,7 @@ export default class Environment {
 
         this.debugFolder
             .add(this.light, 'angle')
-            .min(Math.PI / 10).max(Math.PI / 2).step(0.0001)
+            .min(Math.PI / 10).max(Math.PI / 2-0.0001).step(0.0001)
 
         this.debugFolder
             .add(this.light, 'penumbra')
