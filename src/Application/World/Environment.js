@@ -11,6 +11,8 @@ export default class Environment {
         //Debug
         this.debugFolder1 = this.debug.gui.addFolder('AmbientLight')
         this.debugFolder = this.debug.gui.addFolder('SpotLight')
+        this.debugFolder1.close()
+        this.debugFolder.close()
 
         this.setLight()
     }
