@@ -16,6 +16,8 @@ import Room from './Room'
 import Cue from './Cue'
 
 const instances = new THREE.Group()
+const listener = new THREE.AudioListener()
+const audio = new THREE.PositionalAudio( listener )   
 let centerDist = new THREE.Vector3(0, 0, 0)
 let ballSpeed = []
 
@@ -34,6 +36,7 @@ export default class World {
         this.planeNormal = new THREE.Vector3(0, 1, 0)
         this.tableBedWidth = param.tableWidth - param.ballRadius * 2
         this.tableBedLength = param.tableLength - param.ballRadius * 2
+        this.audioLoader = new THREE.AudioLoader()
 
         //Debug
         this.debugFolder.add(params, 'speedVolume')
@@ -141,6 +144,11 @@ export default class World {
                         let comp = centerDist.multiplyScalar(scalar);
                         ballSpeed[i].sub(comp);
                         ballSpeed[j].add(comp);
+
+                        this.audioLoader.load('./sound/billiards.wav', function (buffer) {
+                            audio.setBuffer(buffer)
+                            audio.play();
+                        });
                     }
                 }
             }
