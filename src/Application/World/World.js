@@ -150,6 +150,7 @@ export default class World {
                         if(audio!= null){
                             this.audioLoader.load('./sound/billiards.wav', function (buffer) {
                             audio.setBuffer(buffer)
+                            instances.children[i].add(audio)
                             audio.play()
                         });}
                     }
