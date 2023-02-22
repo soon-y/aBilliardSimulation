@@ -16,10 +16,10 @@ import Room from './Room'
 import Cue from './Cue'
 
 const instances = new THREE.Group()
-const listener = new THREE.AudioListener()
-const audio = new THREE.PositionalAudio( listener )   
+const radius = param.unit / 8
 let centerDist = new THREE.Vector3(0, 0, 0)
 let ballSpeed = []
+let audio, listener
 
 const params = {
     speedVolume: 1
@@ -93,7 +93,7 @@ export default class World {
     setSpeed() {
         // random velocity vector
         for (let i = 0; i < instances.children.length; i++) {
-            let speed = new THREE.Vector3(Math.random() * 2 - 1, 0, Math.random() * 2 - 1)
+            let speed = new THREE.Vector3((Math.random() - 0.5)*0.1, 0, (Math.random() - 0.5)*0.1)
             ballSpeed.push(speed);
         }
     }
@@ -115,7 +115,7 @@ export default class World {
                 instances.children[i].matrix.setPosition(instances.children[i].position)
             }
 
-            // speed of each ball drops by 20% when rebounded off cushions 
+            // rebounded off cushions 
             for (let i = 0; i < instances.children.length; i++) {
                 if (instances.children[i].position.x > this.tableBedWidth / 2) {
                     ballSpeed[i].x = - Math.abs(ballSpeed[i].x)
@@ -145,10 +145,11 @@ export default class World {
                         ballSpeed[i].sub(comp);
                         ballSpeed[j].add(comp);
 
-                        this.audioLoader.load('./sound/billiards.wav', function (buffer) {
+                        if(audio!= null){
+                            this.audioLoader.load('./sound/billiards.wav', function (buffer) {
                             audio.setBuffer(buffer)
-                            audio.play();
-                        });
+                            audio.play()
+                        });}
                     }
                 }
             }
@@ -165,10 +166,10 @@ function samePosition(x, z) {
     * copmare position x, z to other balls' positions to avoid overlapping
     */
     for (let i = 0; i < instances.children.length; i++) {
-        if (x + param.ballRadius > instances.children[i].position.x - param.ballRadius &&
-            x - param.ballRadius < instances.children[i].position.x + param.ballRadius &&
-            z + param.ballRadius > instances.children[i].position.z - param.ballRadius &&
-            z - param.ballRadius < instances.children[i].position.z + param.ballRadius) {
+        if (x + radius > instances.children[i].position.x - radius &&
+            x - radius < instances.children[i].position.x + radius &&
+            z + radius > instances.children[i].position.z - radius &&
+            z - radius < instances.children[i].position.z + radius) {
             return true;
         }
     }
@@ -199,6 +200,9 @@ document.getElementById("resetSpeed").onclick = function () {
         let speed = new THREE.Vector3(params.speedVolume * (Math.random() * 2 - 1), 0, params.speedVolume * (Math.random() * 2 - 1));
         ballSpeed.push(speed);
     }
+    listener = new THREE.AudioListener()
+    audio = new THREE.PositionalAudio( listener )   
+
 }
 
 setInterval(() => {
