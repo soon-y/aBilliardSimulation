@@ -203,8 +203,10 @@ document.getElementById("resetSpeed").onclick = function () {
         let speed = new THREE.Vector3(params.speedVolume * (Math.random() * 2 - 1), 0, params.speedVolume * (Math.random() * 2 - 1));
         ballSpeed.push(speed);
     }
+
+    if(audio == null){
     listener = new THREE.AudioListener()
-    audio = new THREE.PositionalAudio( listener )   
+    audio = new THREE.PositionalAudio( listener )   }
 
 }
 
