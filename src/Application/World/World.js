@@ -40,6 +40,7 @@ export default class World {
         // Wait for resources
         this.resources.on('ready', () => {
             this.debug = new Debug()
+            this.debug.gui.close()
             this.debugFolder = this.debug.gui.addFolder("Ball")
             //Debug
             this.debugFolder.add(params, 'speedVolume')
