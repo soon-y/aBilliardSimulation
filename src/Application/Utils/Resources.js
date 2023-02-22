@@ -3,7 +3,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import EventEmitter from "./EventEmitter"
 
-// const loadingBar = document.querySelector('.loading-bar')
+const loading = document.querySelector('.loading-page')
+const label = document.querySelector('.label')
+const btn = document.querySelector('.btn')
 
 export default class Resources extends EventEmitter {
     constructor(sources) {
@@ -13,6 +15,25 @@ export default class Resources extends EventEmitter {
         this.sources = sources
 
         //Setup
+        this.loadingManager = new THREE.LoadingManager(
+            //Loaded
+            () => {
+                window.setTimeout(() => {
+                    btn.style.opacity = '100'
+                    loading.style.opacity = '0'
+                }, 1000)
+                window.setTimeout(() => {
+                    loading.style.display = 'none'
+                }, 2000)
+            },
+
+            //progress
+            (itemUrl, itemsLoaded, itemsTotal) => {
+                const progress = Math.floor(itemsLoaded / itemsTotal * 100)
+                label.innerHTML = `${progress}`
+            }
+        )
+
         this.items = {}
         this.toLoad = this.sources.length
         this.loaded = 0

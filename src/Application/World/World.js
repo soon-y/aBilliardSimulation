@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import Application from "../Application"
 import Environment from './Environment'
+import Debug from '../Utils/Debug'
 import { param } from '../param'
 import Table from './Table'
 import lightBulb from './lightBulb'
@@ -31,22 +32,22 @@ export default class World {
         this.time = this.application.time
         this.scene = this.application.scene
         this.resources = this.application.resources
-        this.debug = this.application.debug
-        this.debugFolder = this.debug.gui.addFolder("Ball")
         this.planeNormal = new THREE.Vector3(0, 1, 0)
         this.tableBedWidth = param.tableWidth - param.ballRadius * 2
         this.tableBedLength = param.tableLength - param.ballRadius * 2
         this.audioLoader = new THREE.AudioLoader()
 
-        //Debug
-        this.debugFolder.add(params, 'speedVolume')
-            .name('Speed volume')
-            .min(1).max(10).step(1)
-
         // Wait for resources
         this.resources.on('ready', () => {
+            this.debug = new Debug()
+            this.debugFolder = this.debug.gui.addFolder("Ball")
+            //Debug
+            this.debugFolder.add(params, 'speedVolume')
+                .name('Speed volume')
+                .min(1).max(10).step(1)
+            
             // Setup
-            this.environment = new Environment()
+            this.environment = new Environment(this.debug)
             this.room = new Room()
             this.cue = new Cue()
             this.table = new Table()

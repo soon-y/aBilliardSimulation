@@ -2,11 +2,11 @@ import * as THREE from 'three'
 import Application from "../Application"
 
 export default class Environment {
-    constructor() {
+    constructor(debug) {
         this.application = new Application()
         this.scene = this.application.scene
         this.resources = this.application.resources
-        this.debug = this.application.debug
+        this.debug = debug
 
         //Debug
         this.debugFolder1 = this.debug.gui.addFolder('AmbientLight')

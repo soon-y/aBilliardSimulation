@@ -1,6 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Calistoga&display=swap');
+
 .webgl{position: absolute; left:0px; top:0px;}
 
 .btn {
+    opacity: 0; 
     position: absolute;
     bottom: 20px;
     right: 20px;
@@ -43,4 +46,31 @@
     margin: 0;
     opacity: 1;
     transition: 0s
+}
+
+.loading-page {
+    opacity: 1;
+    position: absolute;
+    left:0px; top:0px;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    background: #000000;
+    transition: opacity 1s ease-in-out;  
+}
+
+.loading-page .label{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    width: 150px;
+    height: 150px;
+    line-height: 150px;
+    text-align: center;
+    font-size: 50px;
+    font-family: 'Calistoga', cursive;;
+    background-color: #fff;
+    color: #000;
 }
