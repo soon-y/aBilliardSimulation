@@ -20,7 +20,8 @@ const instances = new THREE.Group()
 const radius = param.unit / 8
 let centerDist = new THREE.Vector3(0, 0, 0)
 let ballSpeed = []
-let audio, listener
+let needListener = true
+let camera
 
 const params = {
     speedVolume: 1
@@ -35,7 +36,7 @@ export default class World {
         this.planeNormal = new THREE.Vector3(0, 1, 0)
         this.tableBedWidth = param.tableWidth - param.ballRadius * 2
         this.tableBedLength = param.tableLength - param.ballRadius * 2
-        this.audioLoader = new THREE.AudioLoader()
+        camera = this.application.camera.instance
 
         // Wait for resources
         this.resources.on('ready', () => {
@@ -46,7 +47,7 @@ export default class World {
             this.debugFolder.add(params, 'speedVolume')
                 .name('Speed volume')
                 .min(1).max(10).step(1)
-            
+
             // Setup
             this.environment = new Environment(this.debug)
             this.room = new Room()
@@ -69,6 +70,31 @@ export default class World {
             this.scene.add(instances)
             this.placeBalls()
             this.setSpeed()
+
+            setInterval(() => {
+                /**
+                * speed of each ball drops by 20% every second due to friction 
+                */
+                for (let i = 0; i < instances.children.length; i++) {
+                    ballSpeed[i].x -= ballSpeed[i].x * 0.2;
+                    ballSpeed[i].z -= ballSpeed[i].z * 0.2;
+                }
+            }, 1000)
+
+            document.getElementById("resetSpeed").onclick = function () {
+                /**
+                * reset speed array when reset button clicked.
+                */
+                ballSpeed = []
+                for (let i = 0; i < instances.children.length; i++) {
+                    let speed = new THREE.Vector3(params.speedVolume * (Math.random() * 2 - 1), 0, params.speedVolume * (Math.random() * 2 - 1))
+                    ballSpeed.push(speed)
+                }
+            
+                if (needListener) {
+                    setAudio()
+                }
+            }
         })
     }
 
@@ -95,8 +121,8 @@ export default class World {
     setSpeed() {
         // random velocity vector
         for (let i = 0; i < instances.children.length; i++) {
-            let speed = new THREE.Vector3((Math.random() - 0.5)*0.1, 0, (Math.random() - 0.5)*0.1)
-            ballSpeed.push(speed);
+            let speed = new THREE.Vector3((Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.1)
+            ballSpeed.push(speed)
         }
     }
 
@@ -110,10 +136,10 @@ export default class World {
             // update position of rolling balls
             for (let i = 0; i < instances.children.length; i++) {
                 instances.children[i].position.add(ballSpeed[i].clone().multiplyScalar(this.time.delta))
-                const om = ballSpeed[i].length() / param.ballRadius;
+                const om = ballSpeed[i].length() / param.ballRadius
                 const axis = this.planeNormal.clone().cross(ballSpeed[i]).normalize()
                 const dR = new THREE.Matrix4().makeRotationAxis(axis, om * this.time.delta)
-                instances.children[i].matrix.premultiply(dR);
+                instances.children[i].matrix.premultiply(dR)
                 instances.children[i].matrix.setPosition(instances.children[i].position)
             }
 
@@ -141,18 +167,12 @@ export default class World {
             for (let i = 0; i < instances.children.length - 1; i++) {
                 for (let j = i + 1; j < instances.children.length; j++) {
                     if (colliding(instances.children[i], instances.children[j])) {
-                        let speedDiff = ballSpeed[i].clone().sub(ballSpeed[j].clone());
-                        let scalar = centerDist.dot(speedDiff) / centerDist.lengthSq();
-                        let comp = centerDist.multiplyScalar(scalar);
-                        ballSpeed[i].sub(comp);
-                        ballSpeed[j].add(comp);
-
-                        if(audio!= null){
-                            this.audioLoader.load('./sound/billiards.wav', function (buffer) {
-                            audio.setBuffer(buffer)
-                            instances.children[i].add(audio)
-                            audio.play()
-                        });}
+                        let speedDiff = ballSpeed[i].clone().sub(ballSpeed[j].clone())
+                        let scalar = centerDist.dot(speedDiff) / centerDist.lengthSq()
+                        let comp = centerDist.multiplyScalar(scalar)
+                        ballSpeed[i].sub(comp)
+                        ballSpeed[j].add(comp)
+                        instances.children[i].children[0].play()
                     }
                 }
             }
@@ -173,49 +193,37 @@ function samePosition(x, z) {
             x - radius < instances.children[i].position.x + radius &&
             z + radius > instances.children[i].position.z - radius &&
             z - radius < instances.children[i].position.z + radius) {
-            return true;
+            return true
         }
     }
-    return false;
+    return false
 }
 
 function colliding(b1, b2) {
     /**
      * check if two balls collide
      */
-    let xd = b1.position.x - b2.position.x;
-    let zd = b1.position.z - b2.position.z;
-    let distSqr = Math.sqrt((xd * xd) + (zd * zd));
-    centerDist.x = xd;
-    centerDist.z = zd;
+    let xd = b1.position.x - b2.position.x
+    let zd = b1.position.z - b2.position.z
+    let distSqr = Math.sqrt((xd * xd) + (zd * zd))
+    centerDist.x = xd
+    centerDist.z = zd
 
     if (distSqr <= param.ballRadius * 2) {
-        return true;
-    } return false;
+        return true
+    } return false
 }
 
-document.getElementById("resetSpeed").onclick = function () {
-    /**
-    * reset speed array when reset button clicked.
-    */
-    ballSpeed = [];
-    for (let i = 0; i < instances.children.length; i++) {
-        let speed = new THREE.Vector3(params.speedVolume * (Math.random() * 2 - 1), 0, params.speedVolume * (Math.random() * 2 - 1));
-        ballSpeed.push(speed);
-    }
-
-    if(audio == null){
-    listener = new THREE.AudioListener()
-    audio = new THREE.PositionalAudio( listener )   }
-
+function setAudio() {
+    const audioLoader = new THREE.AudioLoader()
+    const listener = new THREE.AudioListener()
+    camera.add(listener)
+    audioLoader.load('./sound/billiards.wav', (buffer) => {
+        for (let i = 0; i < instances.children.length; i++) {
+            const audio = new THREE.PositionalAudio(listener)
+            audio.setBuffer(buffer)
+            instances.children[i].add(audio)
+        }
+        needListener = false
+    })
 }
-
-setInterval(() => {
-    /**
-    * speed of each ball drops by 20% every second due to friction 
-    */
-    for (let i = 0; i < instances.children.length; i++) {
-        ballSpeed[i].x -= ballSpeed[i].x * 0.2;
-        ballSpeed[i].z -= ballSpeed[i].z * 0.2;
-    }
-}, 1000)
