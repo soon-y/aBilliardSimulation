@@ -157,7 +157,7 @@ export default class World {
     centerDist.x = xd;
     centerDist.z = zd;
 
-    if (distSqr <= param.ballRadius * 2) {
+    if (distSqr <= param.ballRadius * 2 + 0.1) {
       return true;
     }
     return false;
