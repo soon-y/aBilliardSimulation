@@ -1,229 +1,241 @@
-import * as THREE from 'three'
-import Application from "../Application"
-import Environment from './Environment'
-import Debug from '../Utils/Debug'
-import { param } from '../param'
-import Table from './Table'
-import lightBulb from './lightBulb'
-import Ball8 from './Ball8'
-import Ball9 from './Ball9'
-import Ball10 from './Ball10'
-import Ball11 from './Ball11'
-import Ball12 from './Ball12'
-import Ball13 from './Ball13'
-import Ball14 from './Ball14'
-import Ball15 from './Ball15'
-import Room from './Room'
-import Cue from './Cue'
+import * as THREE from "three";
+import Application from "../Application";
+import Environment from "./Environment";
+import Debug from "../Utils/Debug";
+import { param } from "../param";
+import Table from "./Table";
+import lightBulb from "./lightBulb";
+import Ball from "./Ball";
+import Room from "./Room";
+import Cue from "./Cue";
+import Audio from "../Utils/Audio";
 
-const instances = new THREE.Group()
-const radius = param.unit / 8
-let centerDist = new THREE.Vector3(0, 0, 0)
-let ballSpeed = []
-let needListener = true
-let camera
+const radius = param.unit / 8;
+let centerDist = new THREE.Vector3(0, 0, 0);
+let ballSpeed = [];
+let needListener = true;
+let camera;
+let ball;
 
 const params = {
-    speedVolume: 1
-}
+  speedVolume: 5,
+};
 
 export default class World {
-    constructor() {
-        this.application = new Application()
-        this.time = this.application.time
-        this.scene = this.application.scene
-        this.resources = this.application.resources
-        this.planeNormal = new THREE.Vector3(0, 1, 0)
-        this.tableBedWidth = param.tableWidth - param.ballRadius * 2
-        this.tableBedLength = param.tableLength - param.ballRadius * 2
-        camera = this.application.camera.instance
+  constructor() {
+    this.application = new Application();
+    this.time = this.application.time;
+    this.scene = this.application.scene;
+    this.resources = this.application.resources;
+    this.planeNormal = new THREE.Vector3(0, 1, 0);
+    this.tableBedWidth = param.tableWidth - param.ballRadius * 2;
+    this.tableBedLength = param.tableLength - param.ballRadius * 2;
+    camera = this.application.camera.instance;
 
-        // Wait for resources
-        this.resources.on('ready', () => {
-            this.debug = new Debug()
-            this.debugFolder = this.debug.gui.addFolder("Ball")
-            this.debugFolder.close()
-            //Debug
-            this.debugFolder.add(params, 'speedVolume')
-                .name('Speed volume')
-                .min(1).max(10).step(1)
+    // Wait for resources
+    this.resources.on("ready", () => {
+      this.debug = new Debug();
+      this.debugFolder = this.debug.gui.addFolder("Ball");
+      this.debugFolder.close();
+      //Debug
+      this.debugFolder
+        .add(params, "speedVolume")
+        .name("Speed volume")
+        .min(1)
+        .max(10)
+        .step(1);
 
-            // Setup
-            this.environment = new Environment(this.debug)
-            this.room = new Room()
-            this.cue = new Cue()
-            this.table = new Table()
-            this.lightBulb = new lightBulb(this.environment.light)
-            this.ball8 = new Ball8().instance
-            this.ball9 = new Ball9().instance
-            this.ball10 = new Ball10().instance
-            this.ball11 = new Ball11().instance
-            this.ball12 = new Ball12().instance
-            this.ball13 = new Ball13().instance
-            this.ball14 = new Ball14().instance
-            this.ball15 = new Ball15().instance
+      // Setup
+      this.environment = new Environment(this.debug);
+      this.room = new Room();
+      this.cue = new Cue();
+      this.table = new Table();
+      this.lightBulb = new lightBulb(this.environment.light);
+      ball = new Ball().instance;
 
-            instances.add(
-                this.ball8, this.ball9, this.ball10, this.ball11,
-                this.ball12, this.ball13, this.ball14, this.ball15)
-            instances.position.y = param.ballRadius + 0.05
-            this.scene.add(instances)
-            this.placeBalls()
-            this.setSpeed()
+      ball.position.y = param.ballRadius + 0.05;
+      this.scene.add(ball);
+      this.placeBalls();
+      this.setSpeed();
 
-            setInterval(() => {
-                /**
-                * speed of each ball drops by 20% every second due to friction 
-                */
-                for (let i = 0; i < instances.children.length; i++) {
-                    ballSpeed[i].x -= ballSpeed[i].x * 0.2;
-                    ballSpeed[i].z -= ballSpeed[i].z * 0.2;
-                }
-            }, 1000)
+      this.ready = true;
 
-            document.getElementById("resetSpeed").onclick = function () {
-                /**
-                * reset speed array when reset button clicked.
-                */
-                ballSpeed = []
-                for (let i = 0; i < instances.children.length; i++) {
-                    let speed = new THREE.Vector3(params.speedVolume * (Math.random() * 2 - 1), 0, params.speedVolume * (Math.random() * 2 - 1))
-                    ballSpeed.push(speed)
-                }
-            
-                if (needListener) {
-                    setAudio()
-                }
-            }
-        })
-    }
-
-    placeBalls() {
+      setInterval(() => {
         /**
-         * place balls initially at the ramdom positions without overlapping
+         * speed of each ball drops by 20% every second due to friction
          */
-        for (let i = 0; i < instances.children.length; i++) {
-            let x = Math.floor(this.tableBedWidth * Math.random()) - this.tableBedWidth / 2
-            let z = Math.floor(this.tableBedLength * Math.random()) - this.tableBedLength / 2
-
-            if (i > 0) {
-                while (samePosition(x, z)) {
-                    x = Math.floor(this.tableBedWidth * Math.random()) - this.tableBedWidth / 2
-                    z = Math.floor(this.tableBedLength * Math.random()) - this.tableBedLength / 2
-                }
-            }
-            instances.children[i].position.x = x
-            instances.children[i].position.z = z
-            instances.children[i].matrixAutoUpdate = false
+        for (let i = 0; i < ball.children.length; i++) {
+          ballSpeed[i].x -= ballSpeed[i].x * 0.2;
+          ballSpeed[i].z -= ballSpeed[i].z * 0.2;
         }
-    }
+      }, 1000);
 
-    setSpeed() {
-        // random velocity vector
-        for (let i = 0; i < instances.children.length; i++) {
-            let speed = new THREE.Vector3((Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.1)
-            ballSpeed.push(speed)
-        }
-    }
-
-    update() {
-        if (this.lightBulb) {
-            this.lightBulb.update()
-            this.lightBulb.lightMat.opacity = this.environment.light.intensity / 10
+      document.getElementById("resetSpeed").onclick = function () {
+        /**
+         * reset speed array when reset button clicked.
+         */
+        ballSpeed = [];
+        for (let i = 0; i < ball.children.length; i++) {
+          let speed = new THREE.Vector3(
+            params.speedVolume * (Math.random() * 2 - 1),
+            0,
+            params.speedVolume * (Math.random() * 2 - 1)
+          );
+          ballSpeed.push(speed);
         }
 
-        if (instances.children.length) {
-            // update position of rolling balls
-            for (let i = 0; i < instances.children.length; i++) {
-                instances.children[i].position.add(ballSpeed[i].clone().multiplyScalar(this.time.delta))
-                const om = ballSpeed[i].length() / param.ballRadius
-                const axis = this.planeNormal.clone().cross(ballSpeed[i]).normalize()
-                const dR = new THREE.Matrix4().makeRotationAxis(axis, om * this.time.delta)
-                instances.children[i].matrix.premultiply(dR)
-                instances.children[i].matrix.setPosition(instances.children[i].position)
-            }
-
-            // rebounded off cushions 
-            for (let i = 0; i < instances.children.length; i++) {
-                if (instances.children[i].position.x > this.tableBedWidth / 2) {
-                    ballSpeed[i].x = - Math.abs(ballSpeed[i].x)
-                    ballSpeed[i].z = ballSpeed[i].z
-                }
-                if (instances.children[i].position.z > this.tableBedLength / 2) {
-                    ballSpeed[i].z = - Math.abs(ballSpeed[i].z)
-                    ballSpeed[i].x = ballSpeed[i].x
-                }
-                if (instances.children[i].position.x < - this.tableBedWidth / 2) {
-                    ballSpeed[i].x = Math.abs(ballSpeed[i].x)
-                    ballSpeed[i].z = ballSpeed[i].z
-                }
-                if (instances.children[i].position.z < - this.tableBedLength / 2) {
-                    ballSpeed[i].z = Math.abs(ballSpeed[i].z)
-                    ballSpeed[i].x = ballSpeed[i].x
-                }
-            }
-
-            // collision
-            for (let i = 0; i < instances.children.length - 1; i++) {
-                for (let j = i + 1; j < instances.children.length; j++) {
-                    if (colliding(instances.children[i], instances.children[j])) {
-                        let speedDiff = ballSpeed[i].clone().sub(ballSpeed[j].clone())
-                        let scalar = centerDist.dot(speedDiff) / centerDist.lengthSq()
-                        let comp = centerDist.multiplyScalar(scalar)
-                        ballSpeed[i].sub(comp)
-                        ballSpeed[j].add(comp)
-                        instances.children[i].children[0].play()
-                    }
-                }
-            }
+        if (needListener) {
+          this.audio = new Audio(ball);
         }
+      };
+    });
+  }
 
-        if (this.environment) {
-            this.environment.update()
-        }
-    }
-}
-
-function samePosition(x, z) {
+  placeBalls() {
     /**
-    * copmare position x, z to other balls' positions to avoid overlapping
-    */
-    for (let i = 0; i < instances.children.length; i++) {
-        if (x + radius > instances.children[i].position.x - radius &&
-            x - radius < instances.children[i].position.x + radius &&
-            z + radius > instances.children[i].position.z - radius &&
-            z - radius < instances.children[i].position.z + radius) {
-            return true
-        }
-    }
-    return false
-}
+     * place balls initially at the ramdom positions without overlapping
+     */
+    for (let i = 0; i < ball.children.length; i++) {
+      let x =
+        Math.floor(this.tableBedWidth * Math.random()) - this.tableBedWidth / 2;
+      let z =
+        Math.floor(this.tableBedLength * Math.random()) -
+        this.tableBedLength / 2;
 
-function colliding(b1, b2) {
+      if (i > 0) {
+        while (this.samePosition(x, z)) {
+          x =
+            Math.floor(this.tableBedWidth * Math.random()) -
+            this.tableBedWidth / 2;
+          z =
+            Math.floor(this.tableBedLength * Math.random()) -
+            this.tableBedLength / 2;
+        }
+      }
+      ball.children[i].position.x = x;
+      ball.children[i].position.z = z;
+      ball.children[i].matrixAutoUpdate = false;
+    }
+  }
+
+  setSpeed() {
+    // random velocity vector
+    for (let i = 0; i < ball.children.length; i++) {
+      let speed = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.1,
+        0,
+        (Math.random() - 0.5) * 0.1
+      );
+      ballSpeed.push(speed);
+    }
+  }
+
+  samePosition(x, z) {
+    /**
+     * copmare position x, z to other balls' positions to avoid overlapping
+     */
+    for (let i = 0; i < ball.children.length; i++) {
+      if (
+        x + radius > ball.children[i].position.x - radius &&
+        x - radius < ball.children[i].position.x + radius &&
+        z + radius > ball.children[i].position.z - radius &&
+        z - radius < ball.children[i].position.z + radius
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  colliding(b1, b2) {
     /**
      * check if two balls collide
      */
-    let xd = b1.position.x - b2.position.x
-    let zd = b1.position.z - b2.position.z
-    let distSqr = Math.sqrt((xd * xd) + (zd * zd))
-    centerDist.x = xd
-    centerDist.z = zd
+    let xd = b1.position.x - b2.position.x;
+    let zd = b1.position.z - b2.position.z;
+    let distSqr = Math.sqrt(xd * xd + zd * zd);
+    centerDist.x = xd;
+    centerDist.z = zd;
 
     if (distSqr <= param.ballRadius * 2) {
-        return true
-    } return false
+      return true;
+    }
+    return false;
+  }
+
+  update() {
+    if (this.lightBulb) {
+      this.lightBulb.update();
+      this.lightBulb.lightMat.opacity = this.environment.light.intensity / 10;
+    }
+
+    if (this.ready) {
+      // update position of rolling balls
+      for (let i = 0; i < ball.children.length; i++) {
+        ball.children[i].position.add(
+          ballSpeed[i].clone().multiplyScalar(this.time.delta)
+        );
+        const om = ballSpeed[i].length() / param.ballRadius;
+        const axis = this.planeNormal.clone().cross(ballSpeed[i]).normalize();
+        const dR = new THREE.Matrix4().makeRotationAxis(
+          axis,
+          om * this.time.delta
+        );
+        ball.children[i].matrix.premultiply(dR);
+        ball.children[i].matrix.setPosition(ball.children[i].position);
+      }
+
+      // rebounded off cushions
+      for (let i = 0; i < ball.children.length; i++) {
+        if (ball.children[i].position.x > this.tableBedWidth / 2) {
+          ballSpeed[i].x = -Math.abs(ballSpeed[i].x);
+          ballSpeed[i].z = ballSpeed[i].z;
+        }
+        if (ball.children[i].position.z > this.tableBedLength / 2) {
+          ballSpeed[i].z = -Math.abs(ballSpeed[i].z);
+          ballSpeed[i].x = ballSpeed[i].x;
+        }
+        if (ball.children[i].position.x < -this.tableBedWidth / 2) {
+          ballSpeed[i].x = Math.abs(ballSpeed[i].x);
+          ballSpeed[i].z = ballSpeed[i].z;
+        }
+        if (ball.children[i].position.z < -this.tableBedLength / 2) {
+          ballSpeed[i].z = Math.abs(ballSpeed[i].z);
+          ballSpeed[i].x = ballSpeed[i].x;
+        }
+      }
+
+      // collision
+      for (let i = 0; i < ball.children.length - 1; i++) {
+        for (let j = i + 1; j < ball.children.length; j++) {
+          if (this.colliding(ball.children[i], ball.children[j])) {
+            let speedDiff = ballSpeed[i].clone().sub(ballSpeed[j].clone());
+            let scalar = centerDist.dot(speedDiff) / centerDist.lengthSq();
+            let comp = centerDist.multiplyScalar(scalar);
+            ballSpeed[i].sub(comp);
+            ballSpeed[j].add(comp);
+            ball.children[i].children[0].play();
+          }
+        }
+      }
+    }
+
+    if (this.environment) {
+      this.environment.update();
+    }
+  }
 }
 
 function setAudio() {
-    const audioLoader = new THREE.AudioLoader()
-    const listener = new THREE.AudioListener()
-    camera.add(listener)
-    audioLoader.load('./sound/billiards.wav', (buffer) => {
-        for (let i = 0; i < instances.children.length; i++) {
-            const audio = new THREE.PositionalAudio(listener)
-            audio.setBuffer(buffer)
-            instances.children[i].add(audio)
-        }
-        needListener = false
-    })
+  const audioLoader = new THREE.AudioLoader();
+  const listener = new THREE.AudioListener();
+  camera.add(listener);
+  audioLoader.load("./sound/billiards.wav", (buffer) => {
+    for (let i = 0; i < ball.children.length; i++) {
+      const audio = new THREE.PositionalAudio(listener);
+      audio.setBuffer(buffer);
+      ball.children[i].add(audio);
+    }
+    needListener = false;
+  });
 }
