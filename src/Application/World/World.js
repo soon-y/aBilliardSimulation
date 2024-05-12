@@ -225,17 +225,3 @@ export default class World {
     }
   }
 }
-
-function setAudio() {
-  const audioLoader = new THREE.AudioLoader();
-  const listener = new THREE.AudioListener();
-  camera.add(listener);
-  audioLoader.load("./sound/billiards.wav", (buffer) => {
-    for (let i = 0; i < ball.children.length; i++) {
-      const audio = new THREE.PositionalAudio(listener);
-      audio.setBuffer(buffer);
-      ball.children[i].add(audio);
-    }
-    needListener = false;
-  });
-}
