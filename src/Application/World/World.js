@@ -11,10 +11,7 @@ import Cue from "./Cue";
 import Audio from "../Utils/Audio";
 
 const radius = param.unit / 8;
-let centerDist = new THREE.Vector3(0, 0, 0);
 let ballSpeed = [];
-let needListener = true;
-let camera;
 let ball;
 
 const params = {
@@ -30,7 +27,8 @@ export default class World {
     this.planeNormal = new THREE.Vector3(0, 1, 0);
     this.tableBedWidth = param.tableWidth - param.ballRadius * 2;
     this.tableBedLength = param.tableLength - param.ballRadius * 2;
-    camera = this.application.camera.instance;
+    this.centerDist = new THREE.Vector3(0, 0, 0);
+    this.audioloaded = false;
 
     // Wait for resources
     this.resources.on("ready", () => {
@@ -84,8 +82,9 @@ export default class World {
           ballSpeed.push(speed);
         }
 
-        if (needListener) {
+        if (!this.audioloaded) {
           this.audio = new Audio(ball);
+          this.audioloaded = true
         }
       };
     });
@@ -151,13 +150,11 @@ export default class World {
     /**
      * check if two balls collide
      */
-    let xd = b1.position.x - b2.position.x;
-    let zd = b1.position.z - b2.position.z;
-    let distSqr = Math.sqrt(xd * xd + zd * zd);
-    centerDist.x = xd;
-    centerDist.z = zd;
+    this.centerDist.x = b1.position.x - b2.position.x;
+    this.centerDist.z= b1.position.z - b2.position.z;
+    let distSqr = Math.sqrt(this.centerDist.x * this.centerDist.x + this.centerDist.z * this.centerDist.z);
 
-    if (distSqr <= param.ballRadius * 2 + 0.1) {
+    if (distSqr <= param.ballRadius * 2.2) {
       return true;
     }
     return false;
@@ -210,8 +207,8 @@ export default class World {
         for (let j = i + 1; j < ball.children.length; j++) {
           if (this.colliding(ball.children[i], ball.children[j])) {
             let speedDiff = ballSpeed[i].clone().sub(ballSpeed[j].clone());
-            let scalar = centerDist.dot(speedDiff) / centerDist.lengthSq();
-            let comp = centerDist.multiplyScalar(scalar);
+            let scalar = this.centerDist.dot(speedDiff) / this.centerDist.lengthSq();
+            let comp = this.centerDist.multiplyScalar(scalar);
             ballSpeed[i].sub(comp);
             ballSpeed[j].add(comp);
             ball.children[i].children[0].play();
