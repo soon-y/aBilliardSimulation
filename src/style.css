@@ -1,6 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Calistoga&display=swap');
 
-.webgl{position: absolute; left:0px; top:0px;}
+body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.webgl{
+    position: absolute; 
+    left:0px; 
+    top:0px;
+}
 
 .btn {
     opacity: 0; 
@@ -59,7 +69,7 @@
     transition: opacity 1.5s ease-in-out;  
 }
 
-.loading-page .label{
+.label {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -67,10 +77,31 @@
     border-radius: 50%;
     width: 150px;
     height: 150px;
-    line-height: 150px;
-    text-align: center;
-    font-size: 50px;
-    font-family: 'Calistoga', cursive;;
     background-color: #fff;
     color: #000;
+}
+
+.loadNum {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff00;
+    color: #000;
+    font-family: 'Calistoga', cursive;
+    font-size: 50px;
+    transform: opacity;
+}
+
+.label.ended {
+    width: 0;
+    height: 0;
+    opacity: 0;
+    transition-duration: 1s;
+    transition-timing-function: ease-out;
+}
+
+.loadNum.ended {
+    opacity: 0;
+    transition-duration: 0.3s;
 }

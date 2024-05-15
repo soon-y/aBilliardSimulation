@@ -5,6 +5,7 @@ import EventEmitter from "./EventEmitter"
 
 const loading = document.querySelector('.loading-page')
 const label = document.querySelector('.label')
+const loadNum = document.querySelector('.loadNum')
 const btn = document.querySelector('.btn')
 
 export default class Resources extends EventEmitter {
@@ -18,6 +19,8 @@ export default class Resources extends EventEmitter {
         this.loadingManager = new THREE.LoadingManager(
             //Loaded
             () => {
+                label.classList.add("ended");
+                loadNum.classList.add("ended");
                 window.setTimeout(() => {
                     btn.style.opacity = '100'
                     loading.style.opacity = '0'
@@ -30,7 +33,7 @@ export default class Resources extends EventEmitter {
             //progress
             (itemUrl, itemsLoaded, itemsTotal) => {
                 const progress = Math.floor(itemsLoaded / itemsTotal * 100)
-                label.innerHTML = `${progress}`
+                loadNum.innerHTML = `${progress}`
             }
         )
 
